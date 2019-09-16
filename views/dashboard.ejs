@@ -1,0 +1,158 @@
+<body>
+<p class="lead mb-3">Welcome <%= user.name %></p>
+<header>
+  <h2>Foodify</h2>
+</header>
+
+<section>
+  <nav>
+    <form action="">
+      <div class="form-group">
+    <label>Your name:</label>
+     <input type="text" id="yourname" value="" class="form-control">
+        </div>
+      <br>
+      <div class="form-group">
+      <label>What are you craving?:</label>
+      <input type="text" id="dish" value="" class="form-control">
+      </div>
+      <br>
+      <div class="form-group">
+      <label>Any ingredient you would like?</label>
+      <input type="text" id="ingredient" value="" class="form-control">
+      </div>
+      <br>
+      <button class="btn btn-primary">submit</button>
+    </form>
+  </nav>
+  
+  <article>
+    <table class="table table-hover">
+      <thead class="thead-dark">
+       <tr>
+      <th scope="col" id="hidden" style="display:none;">Ingredients List</th>
+    </tr>
+      </thead>
+      <tbody id="ingredients">
+      </tbody>
+    </table>
+    <table class="table table-hover">
+      <thead class="thead-dark">
+       <tr>
+      <th scope="row" id="hidden1" style="display:none;">Instructions List</th>
+    </tr>
+      </thead>
+      <tbody id="instructions">
+      </tbody>
+    </table>
+    <table class="table table-hover">
+      <thead class="thead-dark">
+       <tr>
+      <th scope="col">Past Searches</th>
+    </tr>
+      </thead>
+      <tbody id="search">
+      </tbody>
+    </table>
+    <a href="/users/logout" class="btn btn-secondary">Logout</a>
+  </article>
+</section>
+
+<footer>
+  <p>Made by Rafael Pimentel</p>
+</footer>
+
+</body>
+  <script>
+  const submit = function( e ) {
+    // prevent default form action from being carried out
+    e.preventDefault()
+    document.getElementById('hidden').style.display = 'block';
+    document.getElementById('hidden1').style.display = 'block';
+    const input = document.querySelector( '#yourname' );
+    const input2 = document.querySelector( '#dish' );
+    const input3 = document.querySelector( '#ingredient' );
+          json = { yourname: input.value,
+                   dish: input2.value,
+                   ingredient: input3.value},
+            
+          body = JSON.stringify( json )
+    
+    fetch( '/submit', {
+      method:'POST',
+      body 
+    })
+    .then( function( response ) {
+    response.json().then(data => {
+          console.log("Response received", data)
+          displayData(data)
+        });
+      })
+    return false
+  }
+  
+  const loadData = function(json){
+    const arrays = recipe(json)
+    displayData(arrays);
+    
+  }
+  
+  const displayData = function(arrays){
+    
+    document.querySelector("#ingredients").innerHTML = ""
+    document.querySelector("#instructions").innerHTML = ""
+    
+    for (let i = 0; i < arrays.ingredients.length; i++) {
+      const ing = arrays.ingredients[i];
+      displayIngredients(ing);
+    }
+    
+    for (let i = 0; i < arrays.instructions.length; i++) {
+      const ins = arrays.instructions[i];
+      displayInstructions(ins);
+    }
+  }
+  
+  const displayIngredients = function( ing ) {
+  const template = '<tr><td>{name} </td></tr><br>'
+  const row = template.replace("{name}", ing)
+  const tbody = document.querySelector("#ingredients")
+  tbody.innerHTML += row
+}
+  
+  const displayInstructions = function( ins ) {
+  const template = '<tr><td>{name} </td></tr><br>'
+  const row = template.replace("{name}", ins)
+  const tbody = document.querySelector("#instructions")
+  tbody.innerHTML += row
+}
+  
+  // Fetch data and then display it
+const loadDataApp = function( e ) {
+  fetch( '/orders', {
+    method:'GET',
+  })
+  .then( function( response ) {
+    response.json().then(displayDataApp)
+  })
+}
+const displayDataApp = function ( data ) {
+  for (let i = 0; i < data.length; i++) {
+    const order = data[i]
+    displayOrder(order)
+    }
+}
+const displayOrder = function(order) {
+   const template = '<tr scope="row"><td>{name}</td><td>{orbit}</td><td>{launch}</td><td></td></tr><br>'
+  const row = template.replace("{name}", order.yourname).replace("{orbit}", order.dish).replace("{launch}", order.ingredient)
+  const tbody = document.querySelector("#search")
+  tbody.innerHTML += row
+}
+  
+  
+  window.onload = function() {
+    const button = document.querySelector( 'button' )
+    button.onclick = submit;
+    loadDataApp();
+  }
+  </script>

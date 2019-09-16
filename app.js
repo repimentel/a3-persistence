@@ -5,6 +5,10 @@ const http = require( 'http' ),
       bodyParser = require('body-parser'),
       mongoose = require("mongoose"),
       passport = require("passport"),
+      express = require('express'),
+      flash = require('connect-flash'),
+      session = require('express-session'),
+      expressLayouts = require('express-ejs-layouts'),
       
       // IMPORTANT: you must run `npm install` in the directory for this assignment
       // to install the mime library used in the following line of code
@@ -12,6 +16,10 @@ const http = require( 'http' ),
       dir  = 'public/',
       port = 3000,
       url = "mongodb+srv://repimentel:Qhb50fko1Ebn2ZAk@cluster0-kkory.mongodb.net/test?retryWrites=true&w=majority";
+      // Passport file
+      require('./passport')(passport);
+
+      const app = express();
       mongoose.connect(url,
                       {
           useNewUrlParser: true,
@@ -21,12 +29,34 @@ const http = require( 'http' ),
       }).catch(err => {
         console.log('ERROR: ',err.message)
       });
-
 const appdata = [
   { 'yourname': 'Rafael', 'dish': "cookie", 'ingredient': "chocolate" },
   { 'yourname': 'Nasim', 'dish': "roll", 'ingredient': "strawberry" },
   { 'yourname': 'Shine', 'dish': "duck", 'ingredient': "orange"} 
 ]
+
+// EJS
+app.use(expressLayouts);
+app.set('view engine', 'ejs');
+
+// Express body parser
+app.use(express.urlencoded({ extended: true }));
+
+// Express session
+app.use(
+  session({
+    secret: 'secret',
+    resave: true,
+    saveUninitialized: true
+  })
+);
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Connect flash
+app.use(flash());
 
 const recipe = function (data, callback) {
   const new_recipe = data;
@@ -69,73 +99,22 @@ const recipeview = function (link, callback) {
   })
 }
 
-const server = http.createServer( function( request,response ) {
-  if( request.method === 'GET' ) {
-    handleGet( request, response )    
-  }else if( request.method === 'POST' ){
-    handlePost( request, response ) 
-  }
-})
-
-const handleGet = function( request, response ) {
-  const filename = dir + request.url.slice( 1 ) 
-
-  if( request.url === '/' ) {
-    sendFile( response, 'public/index.html' )
-  } else if ( request.url === '/orders' ) {
-    response.writeHeader( 200, { 'Content-Type': 'application/json' })
-    console.log(appdata)
-    response.end( JSON.stringify(appdata) )
-  }else{
-    sendFile( response, filename )
-  }
-}
-
-
-const handlePost = function( request, response ) {
-  let dataString = ''
-  request.on( 'data', function( data ) {
-      dataString += data 
-  })
-
-  request.on('end', function () {
-    const data = JSON.parse(dataString)
-    console.log("Client sent:", data)
-    addLog(data);
-    recipe(data, answer => {
-      console.log(answer);
-      response.writeHead(200, "OK", {
-        'Content-Type': 'application/json'
-      })
-      response.end(JSON.stringify(answer))
-    });
-  })
-}
-
 const addLog = function(data){
   appdata.push(data)
 }
 
-const sendFile = function( response, filename ) {
-   const type = mime.getType( filename ) 
+// Global variables
+app.use(function(req, res, next) {
+  res.locals.success_msg = req.flash('success_msg');
+  res.locals.error_msg = req.flash('error_msg');
+  res.locals.error = req.flash('error');
+  next();
+});
 
-   fs.readFile( filename, function( err, content ) {
+// Routes
+app.use('/', require('./index.js'));
+app.use('/users', require('./users.js'));
 
-     // if the error = null, then we've loaded the file successfully
-     if( err === null ) {
+const PORT = process.env.PORT || port;
 
-       // status code: https://httpstatuses.com
-       response.writeHeader( 200, { 'Content-Type': type })
-       response.end( content )
-
-     }else{
-
-       // file not found, error code 404
-       response.writeHeader( 404 )
-       response.end( '404 Error: File Not Found' )
-
-     }
-   })
-}
-
-server.listen( process.env.PORT || port )
+app.listen(PORT, console.log(`Server started on port ${PORT}`));
