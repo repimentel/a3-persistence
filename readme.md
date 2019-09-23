@@ -2,7 +2,7 @@
 
 ## Foodify 2.0
 
-your glitch link e.g. http://a3-charlieroberts.glitch.me
+your glitch link e.g. https://repimentel-a3-persistence-1.glitch.me/
 
 Include a very brief summary of your project here. Images are encouraged, along with concise, high-level text. Be sure to include:
 
